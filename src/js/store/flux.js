@@ -1,42 +1,67 @@
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
-			demo: [
-				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
-				}
-			]
+			people: JSON.parse(localStorage.getItem("people")) || [],
+			planets: JSON.parse(localStorage.getItem("planets")) || [],
+			favorites: []
 		},
 		actions: {
-			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
+			getStarWarsPeople: async () => {
+				try {
+					if (getStore().people.length <= 0) {
+						let response = await fetch(`https://www.swapi.tech/api/people`)
+						let data = await response.json()
+						for (let i = 0; i < data.results.length; i++) {
+							let responseDetail = await fetch(data.results[i].url)
+							let dataDetail = await responseDetail.json()
+							dataDetail.result["image"] = `https://starwars-visualguide.com/assets/img/characters/${dataDetail.result.uid}.jpg`
+							setStore({
+								people: [...getStore().people,
+								dataDetail.result
+								]
+							})
+							localStorage.setItem("people", JSON.stringify(getStore().people))
+						}
+					}
+				} catch (error) {
+					console.log(error)
+				}
 			},
-			loadSomeData: () => {
-				/**
-					fetch().then().then(data => setStore({ "foo": data.bar }))
-				*/
+			getStarWarsPlanets: async () => {
+				try {
+					if (getStore().planets.length <= 0) {
+						let response = await fetch("https://www.swapi.tech/api/planets")
+						let data = await response.json()
+						for (let i = 0; i < data.results.length; i++) {
+							let responseDetail = await fetch(data.results[i].url)
+							let dataDetail = await responseDetail.json()
+							dataDetail.result["image"] = `https://starwars-visualguide.com/assets/img/planets/${dataDetail.result.uid}.jpg`
+							setStore({
+								planets: [...getStore().planets,
+								dataDetail.result
+								]
+							})
+							localStorage.setItem("planets", JSON.stringify(getStore().planets))
+						}
+					}
+				} catch (error) {
+					console.log(error)
+				}
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
-
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
-
-				//reset the global store
-				setStore({ demo: demo });
+			addFavorite: (element, nature) => {
+				if (!getStore().favorites.includes(element)) {
+				element["nature"] = nature
+				setStore({
+					favorites: [...getStore().favorites,
+					element]
+				})
+			}
+			},
+			deleteFavorite: (id) => {
+				let result = getStore().favorites.filter((item) => item._id != id)
+				setStore({
+					favorites: result
+				})
 			}
 		}
 	};
